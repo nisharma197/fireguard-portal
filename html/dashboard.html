@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+  <h1>Admin Dashboard</h1>
+
+  <!-- Search -->
+  <input id="search" placeholder="Search by name..." onkeyup="searchTable()">
+
+  <!-- Chart -->
+  <div class="chart-box">
+    <canvas id="myChart"></canvas>
+  </div>
+
+  <!-- Table -->
+  <table id="appTable">
+    <tr>
+      <th>ID</th>
+      <th>Name</th>
+      <th>Status</th>
+      <th>Action</th>
+    </tr>
+
+    <tr>
+      <td>101</td>
+      <td>Nisha</td>
+      <td><span class="badge pending">Pending</span></td>
+      <td>
+        <button class="approve" onclick="updateStatus(this,'approved')">Approve</button>
+        <button class="reject" onclick="updateStatus(this,'rejected')">Reject</button>
+      </td>
+    </tr>
+
+    <tr>
+      <td>102</td>
+      <td>Rahul</td>
+      <td><span class="badge approved">Approved</span></td>
+      <td>
+        <button class="approve">Approve</button>
+        <button class="reject">Reject</button>
+      </td>
+    </tr>
+
+  </table>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="js/script.js"></script>
+</body>
+</html>

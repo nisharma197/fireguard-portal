@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Fire Inspection System</title>
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body onload="hideLoader()">
+
+<div id="loader">🔥 Initializing System...</div>
+
+<div class="sidebar">
+  <h2>FIRE SYS</h2>
+  <a href="index.html">Home</a>
+  <a href="login.html">Login</a>
+  <a href="register.html">Register</a>
+  <a href="dashboard.html">Dashboard</a>
+</div>
+
+<div class="main fade-in">
+  <h1>Fire Department Real-Time Monitoring</h1>
+  <p class="subtitle">Inspection Requests | NOC Approval | Live Tracking</p>
+
+  <!-- Inspection Form -->
+  <div class="form-box">
+    <h2>Request On-Site Inspection</h2>
+    <input placeholder="Inspection Location">
+    <textarea placeholder="Inspection Details"></textarea>
+    <input type="file">
+    <button onclick="showToast('Inspection Requested ✅')">Request Inspection</button>
+  </div>
+</div>
+
+<script src="js/script.js"></script>
+</body>
+</html>
