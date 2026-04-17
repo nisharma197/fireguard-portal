@@ -1,26 +1,4 @@
 body { margin:0; font-family:'Segoe UI'; background:#0f0f0f; color:white; }
-.sidebar {
-  position:fixed; width:230px; height:100%;
-  background:#1a1a1a; padding:20px;
-}
-.sidebar h2{ color:red }
-.sidebar a{ display:block; margin:15px 0; color:#ccc; text-decoration:none }
-.sidebar a:hover{ color:red }
-
-.main { margin-left:250px; padding:40px }
-.subtitle{ color:#aaa }
-
-.form-box {
-  background:#1a1a1a; padding:20px; border-radius:10px;
-  box-shadow:0 0 15px rgba(255,0,0,0.3);
-  width:400px; margin-top:20px;
-}
-
-input, textarea {
-  width:100%; padding:10px; margin:10px 0;
-  background:#222; border:none; color:white;
-}
-
 button {
   width:100%; padding:10px; background:red;
   border:none; color:white; cursor:pointer;
