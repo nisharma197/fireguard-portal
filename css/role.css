@@ -1,0 +1,42 @@
+body {
+    margin: 0;
+    font-family: Arial;
+    background: #0f172a;
+    color: white;
+}
+
+.container {
+    text-align: center;
+    margin-top: 100px;
+}
+
+.cards {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+}
+
+.card {
+    background: rgba(255,255,255,0.05);
+    padding: 30px;
+    border-radius: 12px;
+    width: 200px;
+    transition: 0.3s;
+}
+
+.card:hover {
+    transform: scale(1.05);
+}
+
+button {
+    padding: 10px 20px;
+    border: none;
+    background: red;
+    color: white;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+button:hover {
+    background: darkred;
+}

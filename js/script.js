@@ -1,246 +1,514 @@
-// ===== EMPTY DATA — user will add from UI =====
-let apps = [];
-let curFilt='all', curPg=1, nocCt=0, appCt=0;
-const PP=8;
-const AC=['linear-gradient(135deg,#f59e0b,#ef4444)','linear-gradient(135deg,#22c55e,#38bdf8)','linear-gradient(135deg,#a78bfa,#ec4899)','linear-gradient(135deg,#f97316,#fbbf24)','linear-gradient(135deg,#38bdf8,#818cf8)','linear-gradient(135deg,#ef4444,#f97316)','linear-gradient(135deg,#14b8a6,#22c55e)','linear-gradient(135deg,#ec4899,#a78bfa)'];
-const ini=n=>n.split(' ').map(w=>w[0]).join('').substring(0,2).toUpperCase();
-const acol=i=>AC[i%AC.length];
-const sLbl={pending:'Pending',inspection:'Inspection',followup:'Follow-up',approved:'Approved',rejected:'Rejected','noc-issued':'NOC Issued'};
-const fDt=d=>{if(!d)return'—';return new Date(d).toLocaleDateString('en-IN',{day:'2-digit',month:'short',year:'numeric'})};
-const now=()=>new Date().toLocaleString('en-IN',{day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
+        /* =========================================
+           JS: utils.js (Helpers)
+           ========================================= */
+        const Utils = {
+            generateId: () => Math.random().toString(36).substr(2, 9),
+            
+            showToast: (message, type = 'info') => {
+                const container = document.getElementById('toast-container');
+                const toast = document.createElement('div');
+                toast.className = 'toast';
+                let icon = type === 'success' ? '<i class="fa-solid fa-check-circle" style="color:#4caf50"></i>' : 
+                           type === 'error' ? '<i class="fa-solid fa-exclamation-circle" style="color:#f44336"></i>' : 
+                           '<i class="fa-solid fa-info-circle"></i>';
+                toast.innerHTML = `${icon} <span>${message}</span>`;
+                container.appendChild(toast);
+                setTimeout(() => toast.remove(), 3000);
+            },
 
-// Empty state HTML
-const emptyHTML=(icon,msg,sub)=>`<tr><td colspan="7"><div class="empty-state"><i class="fas ${icon}"></i><p>${msg}</p><small>${sub}</small></div></td></tr>`;
-const emptyDiv=(icon,msg,sub)=>`<div class="empty-state"><i class="fas ${icon}"></i><p>${msg}</p><small>${sub}</small></div>`;
+            formatDate: (dateString) => {
+                const options = { year: 'numeric', month: 'short', day: 'numeric' };
+                return new Date(dateString).toLocaleDateString(undefined, options);
+            },
 
-// ===== WELCOME FIRE PARTICLES =====
-(function(){
-  const c=document.getElementById('fireCanvas'),ctx=c.getContext('2d');
-  let w,h,pts=[];
-  function resize(){w=c.width=c.offsetWidth;h=c.height=c.offsetHeight}
-  resize();window.addEventListener('resize',resize);
-  for(let i=0;i<55;i++)pts.push({x:Math.random()*w,y:h+Math.random()*100,vx:(Math.random()-.5)*.7,vy:-Math.random()*1.8-1,r:Math.random()*2.5+1,a:Math.random(),col:Math.random()>.5?'245,158,11':'239,68,68'});
-  function draw(){
-    ctx.clearRect(0,0,w,h);
-    pts.forEach(p=>{p.x+=p.vx;p.y+=p.vy;p.a-=.003;
-      if(p.a<=0||p.y<-10){p.x=Math.random()*w;p.y=h+10;p.a=Math.random();p.vy=-Math.random()*1.8-1}
-      ctx.beginPath();ctx.arc(p.x,p.y,Math.max(.5,p.r),0,Math.PI*2);
-      ctx.fillStyle=`rgba(${p.col},${Math.max(0,p.a*.45)})`;ctx.fill();
-    });
-    requestAnimationFrame(draw);
-  }
-  draw();
-})();
+            openModal: (modalId) => {
+                document.getElementById(modalId).classList.add('active');
+            },
 
-function enterApp(){document.getElementById('welcomePage').classList.add('hide');setTimeout(()=>document.getElementById('welcomePage').style.display='none',600)}
-function toggleSidebar(){document.getElementById('sidebar').classList.toggle('open');document.getElementById('sidebarOverlay').classList.toggle('show')}
-function closeSidebar(){document.getElementById('sidebar').classList.remove('open');document.getElementById('sidebarOverlay').classList.remove('show')}
-function goPage(p,el){document.querySelectorAll('.page').forEach(s=>s.classList.remove('on'));document.querySelectorAll('.nav-item').forEach(n=>n.classList.remove('active'));document.getElementById('pg-'+p).classList.add('on');if(el)el.classList.add('active');closeSidebar();if(p==='reports')initRepCharts()}
+            closeModal: (modalId) => {
+                document.getElementById(modalId).classList.remove('active');
+            }
+        };
 
-function showToast(m,t='info'){
-  const ic={success:'fa-circle-check',error:'fa-circle-xmark',info:'fa-circle-info',warning:'fa-triangle-exclamation'};
-  const c=document.getElementById('toastC'),d=document.createElement('div');
-  d.className='toast '+t;d.innerHTML=`<i class="fas ${ic[t]} toast-i"></i><span>${m}</span>`;
-  c.appendChild(d);setTimeout(()=>{d.classList.add('out');setTimeout(()=>d.remove(),300)},3000);
-}
-function openM(id){document.getElementById(id).classList.add('open');document.body.style.overflow='hidden';if(id==='schedM'||id==='nocM')fillSels()}
-function closeM(id){document.getElementById(id).classList.remove('open');document.body.style.overflow=''}
-document.querySelectorAll('.m-overlay').forEach(o=>o.addEventListener('click',e=>{if(e.target===o)closeM(o.id)}));
+        /* =========================================
+           JS: auth.js (Authentication & Roles)
+           ========================================= */
+        const Auth = {
+            currentUser: null,
 
-function updTime(){document.getElementById('liveTime').textContent=new Date().toLocaleTimeString('en-IN',{hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:true})}
-setInterval(updTime,1000);updTime();
+            login: (role) => {
+                // Simulate Login
+                if (role === 'user') {
+                    Auth.currentUser = { name: 'Rahul Sharma', role: 'user', id: 'USR001' };
+                } else if (role === 'inspector') {
+                    Auth.currentUser = { name: 'Officer R. Singh', role: 'inspector', id: 'INS001' };
+                } else if (role === 'admin') {
+                    Auth.currentUser = { name: 'Chief Fire Officer', role: 'admin', id: 'ADM001' };
+                }
 
-function getFiltered(){
-  let f=apps;
-  if(curFilt!=='all')f=f.filter(a=>a.status===curFilt);
-  const q=(document.getElementById('gSearch')?.value||'').toLowerCase();
-  if(q)f=f.filter(a=>a.id.toLowerCase().includes(q)||a.name.toLowerCase().includes(q)||a.type.toLowerCase().includes(q));
-  return f;
-}
+                Utils.showToast(`Welcome back, ${Auth.currentUser.name}`, 'success');
+                App.initDashboard();
+            },
 
-// ===== RENDER APP TABLE =====
-function renderApp(){
-  const f=getFiltered(),tp=Math.max(1,Math.ceil(f.length/PP));
-  if(curPg>tp)curPg=tp;
-  const s=(curPg-1)*PP,pg=f.slice(s,s+PP);
-  document.getElementById('appCt').textContent=f.length;
-  document.getElementById('tblInfo').textContent=f.length?`Showing ${s+1}-${Math.min(s+PP,f.length)} of ${f.length}`:'No records';
-  const tb=document.getElementById('appTb');
-  if(!pg.length){tb.innerHTML=emptyHTML('fa-file-circle-plus','No applications yet','Click "New Application" to add one');document.getElementById('pagDiv').innerHTML='';return}
-  tb.innerHTML=pg.map(a=>{const i=apps.indexOf(a);return`<tr>
-    <td><span class="app-id">${a.id}</span></td>
-    <td><div class="app-cell"><div class="app-av" style="background:${acol(i)}">${ini(a.name)}</div><div><div class="app-nm">${a.name}</div><div class="app-ph">${a.phone}</div></div></div></td>
-    <td>${a.type}</td>
-    <td><span class="pri ${a.priority.toLowerCase()}">${a.priority}</span></td>
-    <td><span class="sbadge ${a.status}"><span class="dot"></span>${sLbl[a.status]}</span></td>
-    <td style="font-family:'JetBrains Mono',monospace;font-size:.8rem;color:var(--txm)">${fDt(a.applied)}</td>
-    <td><div class="tbl-acts">
-      <button class="btn-i" title="View" onclick="viewDet('${a.id}')"><i class="fas fa-eye"></i></button>
-      ${a.status==='pending'?`<button class="btn-i" title="Schedule" onclick="qSched('${a.id}')"><i class="fas fa-calendar-plus"></i></button>`:''}
-      ${a.status==='approved'?`<button class="btn-i" title="NOC" onclick="qNOC('${a.id}')"><i class="fas fa-stamp"></i></button>`:''}
-      ${a.status==='inspection'?`<button class="btn-i" title="Complete" onclick="compInsp('${a.id}')"><i class="fas fa-check"></i></button>`:''}
-      ${a.status==='followup'?`<button class="btn-i" title="Resolve" onclick="resFu('${a.id}')"><i class="fas fa-check-double"></i></button>`:''}
-    </div></td></tr>`}).join('');
-  const pd=document.getElementById('pagDiv');pd.innerHTML='';
-  if(tp>1){pd.innerHTML+=`<button class="pg-btn" onclick="gP(${curPg-1})" ${curPg===1?'disabled':''}><i class="fas fa-chevron-left"></i></button>`;
-  for(let p=1;p<=tp;p++)pd.innerHTML+=`<button class="pg-btn ${p===curPg?'on':''}" onclick="gP(${p})">${p}</button>`;
-  pd.innerHTML+=`<button class="pg-btn" onclick="gP(${curPg+1})" ${curPg===tp?'disabled':''}><i class="fas fa-chevron-right"></i></button>`}
-}
-function gP(p){const tp=Math.max(1,Math.ceil(getFiltered().length/PP));if(p<1||p>tp)return;curPg=p;renderApp()}
-function filt(f,b){curFilt=f;curPg=1;document.querySelectorAll('.fil-btn').forEach(x=>x.classList.remove('on'));b.classList.add('on');renderApp()}
-function doSearch(){curPg=1;renderApp()}
+            logout: () => {
+                Auth.currentUser = null;
+                document.getElementById('dashboard-app').style.display = 'none';
+                App.showLanding();
+                Utils.showToast('Logged out successfully');
+            }
+        };
 
-// ===== DETAIL =====
-function viewDet(id){
-  const a=apps.find(x=>x.id===id);if(!a)return;const i=apps.indexOf(a);
-  document.getElementById('detTitle').textContent=a.id;
-  let act='';
-  if(a.status==='pending')act=`<button class="btn btn-p" onclick="qSched('${id}');closeM('detM')"><i class="fas fa-calendar-plus"></i> Schedule</button>`;
-  if(a.status==='inspection')act=`<button class="btn btn-sc" onclick="compInsp('${id}');closeM('detM')"><i class="fas fa-check"></i> Complete</button>`;
-  if(a.status==='approved')act=`<button class="btn btn-p" onclick="qNOC('${id}');closeM('detM')"><i class="fas fa-stamp"></i> Issue NOC</button>`;
-  if(a.status==='followup')act=`<button class="btn btn-sc" onclick="resFu('${id}');closeM('detM')"><i class="fas fa-check-double"></i> Resolve</button>`;
-  act+=`<button class="btn btn-s" onclick="closeM('detM')">Close</button>`;
-  document.getElementById('detFoot').innerHTML=act;
-  document.getElementById('detBody').innerHTML=`<div class="d-grid" style="margin-bottom:18px">
-    <div class="d-item"><span class="d-lbl">Applicant</span><span class="d-val">${a.name}</span></div>
-    <div class="d-item"><span class="d-lbl">Phone</span><span class="d-val">${a.phone}</span></div>
-    <div class="d-item"><span class="d-lbl">Type</span><span class="d-val">${a.type}</span></div>
-    <div class="d-item"><span class="d-lbl">Priority</span><span class="d-val"><span class="pri ${a.priority.toLowerCase()}">${a.priority}</span></span></div>
-    <div class="d-item"><span class="d-lbl">Status</span><span class="d-val"><span class="sbadge ${a.status}"><span class="dot"></span>${sLbl[a.status]}</span></span></div>
-    <div class="d-item"><span class="d-lbl">Applied</span><span class="d-val" style="font-family:'JetBrains Mono',monospace">${fDt(a.applied)}</span></div>
-    <div class="d-item"><span class="d-lbl">Inspector</span><span class="d-val">${a.inspector||'—'}</span></div>
-    <div class="d-item"><span class="d-lbl">Inspection</span><span class="d-val" style="font-family:'JetBrains Mono',monospace">${a.inspDate?fDt(a.inspDate):'—'}</span></div>
-    <div class="d-item full"><span class="d-lbl">Address</span><span class="d-val">${a.address}</span></div>
-    ${a.nocNo?`<div class="d-item"><span class="d-lbl">NOC Number</span><span class="d-val" style="color:var(--ac);font-family:'JetBrains Mono',monospace;font-weight:700">${a.nocNo}</span></div>`:''}
-    ${a.nocValid?`<div class="d-item"><span class="d-lbl">Valid Till</span><span class="d-val" style="font-family:'JetBrains Mono',monospace">${fDt(a.nocValid)}</span></div>`:''}
-  </div><div style="font-weight:700;font-size:.88rem;margin-bottom:10px">Timeline</div><div class="tl">${a.tl.map(t=>`<div class="tl-item"><div class="tl-dot ${t.c}"><i class="fas ${t.i}"></i></div><div class="tl-body"><div class="tl-title">${t.t}</div><div class="tl-desc">${t.d}</div><div class="tl-time">${t.time}</div></div></div>`).join('')}</div>`;
-  openM('detM');
-}
+        /* =========================================
+           JS: main.js (Data & Logic)
+           ========================================= */
+        
+        // Initial Dummy Data
+        const DataManager = {
+            getApplications: () => {
+                const data = localStorage.getItem('fireNocData');
+                return data ? JSON.parse(data) : initialData;
+            },
 
-// ===== ACTIONS =====
-function qSched(id){openM('schedM');setTimeout(()=>document.getElementById('scApp').value=id,50)}
-function qNOC(id){openM('nocM');setTimeout(()=>document.getElementById('nocApp').value=id,50)}
+            saveApplication: (newApp) => {
+                const apps = DataManager.getApplications();
+                apps.unshift(newApp); // Add to top
+                localStorage.setItem('fireNocData', JSON.stringify(apps));
+                return apps;
+            },
 
-function compInsp(id){
-  const a=apps.find(x=>x.id===id);if(!a)return;
-  if(Math.random()>.3){a.status='approved';a.tl.push({t:'Inspection Passed',d:'Compliant',time:now(),i:'fa-clipboard-check',c:'gn'},{t:'Approved',d:'By Fire Officer',time:now(),i:'fa-check-circle',c:'gn'});showToast(`${id} passed — approved`,'success')}
-  else{a.status='followup';a.tl.push({t:'Inspection Done',d:'Issues found',time:now(),i:'fa-clipboard-check',c:'pp'},{t:'Follow-up',d:'Resolve in 15 days',time:now(),i:'fa-arrows-rotate',c:'rd'});showToast(`${id} — follow-up required`,'warning')}
-  refresh();
-}
-function resFu(id){
-  const a=apps.find(x=>x.id===id);if(!a)return;a.status='approved';
-  a.tl.push({t:'Follow-up Resolved',d:'Compliance met',time:now(),i:'fa-check-double',c:'gn'},{t:'Approved',d:'After compliance',time:now(),i:'fa-check-circle',c:'gn'});
-  showToast(`${id} resolved — approved`,'success');refresh();
-}
+            updateApplication: (updatedApp) => {
+                let apps = DataManager.getApplications();
+                apps = apps.map(app => app.id === updatedApp.id ? updatedApp : app);
+                localStorage.setItem('fireNocData', JSON.stringify(apps));
+                return apps;
+            }
+        };
 
-function submitApp(){
-  const n=document.getElementById('naName').value.trim(),p=document.getElementById('naPhone').value.trim(),
-  t=document.getElementById('naType').value,pr=document.getElementById('naPri').value,ad=document.getElementById('naAddr').value.trim();
-  if(!n||!p||!t||!ad){showToast('Fill all required fields','error');return}
-  appCt++;const id='FD-'+new Date().getFullYear()+'-'+String(appCt).padStart(3,'0'),ds=new Date().toISOString().split('T')[0];
-  apps.unshift({id,name:n,phone:p,type:t,priority:pr,status:'pending',address:ad,applied:ds,inspector:'',inspDate:'',tl:[{t:'Application Received',d:'New submission',time:now(),i:'fa-inbox',c:'am'}]});
-  closeM('newAppM');['naName','naPhone','naAddr'].forEach(x=>document.getElementById(x).value='');document.getElementById('naType').value='';
-  showToast(`${id} registered`,'success');refresh();
-}
+        /* =========================================
+           JS: dashboard.js (Render Logic)
+           ========================================= */
+        const Dashboard = {
+            renderMenu: () => {
+                const menu = document.getElementById('sidebar-menu');
+                const role = Auth.currentUser.role;
+                let html = '';
 
-function submitSched(){
-  const id=document.getElementById('scApp').value,ins=document.getElementById('scInsp').value,dt=document.getElementById('scDate').value,tm=document.getElementById('scTime').value;
-  if(!id||!dt){showToast('Select application and date','error');return}
-  const a=apps.find(x=>x.id===id);if(!a)return;
-  a.status='inspection';a.inspector=ins;a.inspDate=dt;
-  a.tl.push({t:'Inspection Scheduled',d:`${ins}, ${tm}`,time:now(),i:'fa-calendar',c:'bl'});
-  closeM('schedM');showToast(`Inspection scheduled for ${id}`,'success');refresh();
-}
+                if (role === 'user') {
+                    html = `
+                        <li><a href="#" class="active" onclick="User.renderHome()"><i class="fa-solid fa-home"></i> Dashboard</a></li>
+                        <li><a href="#" onclick="User.renderMyApplications()"><i class="fa-solid fa-file-alt"></i> My Applications</a></li>
+                    `;
+                } else if (role === 'inspector') {
+                    html = `
+                        <li><a href="#" class="active" onclick="Inspector.renderHome()"><i class="fa-solid fa-clipboard-list"></i> Tasks</a></li>
+                        <li><a href="#" onclick="Inspector.renderHistory()"><i class="fa-solid fa-history"></i> History</a></li>
+                    `;
+                } else if (role === 'admin') {
+                    html = `
+                        <li><a href="#" class="active" onclick="Admin.renderHome()"><i class="fa-solid fa-chart-pie"></i> Overview</a></li>
+                        <li><a href="#" onclick="Admin.renderAllApps()"><i class="fa-solid fa-database"></i> All Applications</a></li>
+                        <li><a href="#" onclick="Admin.renderNocIssuance()"><i class="fa-solid fa-stamp"></i> NOC Issuance</a></li>
+                    `;
+                }
+                menu.innerHTML = html;
+            },
 
-function issueNOC(){
-  const id=document.getElementById('nocApp').value,val=document.getElementById('nocVal').value;
-  if(!id){showToast('Select approved application','error');return}
-  const a=apps.find(x=>x.id===id);if(!a||a.status!=='approved'){showToast('Must be approved first','error');return}
-  nocCt++;const nn='NOC-'+new Date().getFullYear()+'-'+String(nocCt).padStart(3,'0'),d=new Date(),id2=d.toISOString().split('T')[0];
-  d.setFullYear(d.getFullYear()+parseInt(val));const vd=d.toISOString().split('T')[0];
-  a.status='noc-issued';a.nocNo=nn;a.nocIssued=id2;a.nocValid=vd;
-  a.tl.push({t:'NOC Issued',d:`${nn}, ${val}`,time:now(),i:'fa-certificate',c:'am'});
-  closeM('nocM');showToast(`NOC ${nn} issued`,'success');refresh();
-}
+            renderHeader: () => {
+                document.getElementById('user-name-display').innerText = Auth.currentUser.name;
+                document.getElementById('user-avatar-display').innerText = Auth.currentUser.name.charAt(0);
+            }
+        };
 
-function fillSels(){
-  document.getElementById('scApp').innerHTML='<option value="">Select...</option>'+apps.filter(a=>a.status==='pending').map(a=>`<option value="${a.id}">${a.id} — ${a.name}</option>`).join('');
-  document.getElementById('nocApp').innerHTML='<option value="">Select approved...</option>'+apps.filter(a=>a.status==='approved').map(a=>`<option value="${a.id}">${a.id} — ${a.name}</option>`).join('');
-}
+        /* =========================================
+           JS: User Functions
+           ========================================= */
+        const User = {
+            renderHome: () => {
+                Dashboard.renderHeader();
+                document.getElementById('page-title').innerText = 'User Dashboard';
+                
+                const apps = DataManager.getApplications().filter(a => a.userId === Auth.currentUser.id);
+                const pending = apps.filter(a => a.status === 'Pending' || a.status === 'Follow-up Required').length;
+                const approved = apps.filter(a => a.status === 'Approved').length;
 
-// ===== INSPECTIONS TABLE =====
-function renderInsp(){
-  const f=apps.filter(a=>a.status==='inspection'),tb=document.getElementById('inspTb');
-  if(!f.length){tb.innerHTML=`<tr><td colspan="6">${emptyDiv('fa-clipboard-check','No inspections scheduled','Schedule one from Applications page')}</td></tr>`;return}
-  tb.innerHTML=f.map(a=>{const i=apps.indexOf(a);return`<tr>
-    <td><span class="app-id">${a.id}</span></td>
-    <td><div class="app-cell"><div class="app-av" style="background:${acol(i)}">${ini(a.name)}</div><div class="app-nm">${a.name}</div></div></td>
-    <td>${a.inspector}</td>
-    <td style="font-family:'JetBrains Mono',monospace;font-size:.8rem">${fDt(a.inspDate)}</td>
-    <td><span class="sbadge inspection"><span class="dot"></span>Scheduled</span></td>
-    <td><div class="tbl-acts"><button class="btn-i" onclick="viewDet('${a.id}')"><i class="fas fa-eye"></i></button><button class="btn-i" onclick="compInsp('${a.id}')"><i class="fas fa-check"></i></button></div></td></tr>`}).join('');
-}
+                const content = document.getElementById('dynamic-content');
+                content.innerHTML = `
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-info">
+                                <h3>${apps.length}</h3>
+                                <p>Total Applications</p>
+                            </div>
+                            <i class="fa-solid fa-folder stat-icon"></i>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-info">
+                                <h3>${pending}</h3>
+                                <p>Action Required</p>
+                            </div>
+                            <i class="fa-solid fa-exclamation-triangle stat-icon" style="color: orange;"></i>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-info">
+                                <h3>${approved}</h3>
+                                <p>NOC Issued</p>
+                            </div>
+                            <i class="fa-solid fa-check-circle stat-icon" style="color: green;"></i>
+                        </div>
+                    </div>
 
-// ===== FOLLOWUPS =====
-function renderFu(){
-  const f=apps.filter(a=>a.status==='followup'),c=document.getElementById('fuList');
-  if(!f.length){c.innerHTML=emptyDiv('fa-arrows-rotate','No pending follow-ups','Follow-ups appear when inspections find issues');return}
-  c.innerHTML=f.map(a=>{const d=Math.floor((Date.now()-new Date(a.inspDate).getTime())/864e5),cl=d>15?'over':d>10?'soon':'',tx=d>15?`${d-15}d overdue`:`${15-d}d left`;
-  return`<div class="fu-card" onclick="viewDet('${a.id}')"><div class="fu-bar ${a.priority.toLowerCase()}"></div><div class="fu-info"><div class="fu-t">${a.id} — ${a.name}</div><div class="fu-s">${a.address}</div></div><div class="fu-due ${cl}">${tx}</div></div>`}).join('');
-}
+                    <div class="card">
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px;">
+                            <h3>Quick Action</h3>
+                            <button class="btn btn-primary" onclick="Utils.openModal('modal-new-app')"><i class="fa-solid fa-plus"></i> Apply for NOC</button>
+                        </div>
+                        <p>Apply for a new Fire NOC for your residential, commercial, or industrial property.</p>
+                    </div>
 
-// ===== NOC =====
-function renderNOC(){
-  const f=apps.filter(a=>a.status==='noc-issued');
-  document.getElementById('nocGrid').innerHTML=f.length?f.slice(0,6).map(a=>`<div class="noc-card"><div class="noc-wm">NOC</div><div class="noc-top"><span class="noc-no">${a.nocNo}</span><span class="sbadge noc-issued"><span class="dot"></span>Active</span></div><div class="app-nm">${a.name}</div><div class="noc-addr">${a.address}</div><div class="noc-meta"><span><i class="fas fa-calendar"></i> ${fDt(a.nocIssued)}</span><span><i class="fas fa-clock"></i> ${fDt(a.nocValid)}</span></div></div>`).join(''):'';
-  const tb=document.getElementById('nocTb');
-  if(!f.length){tb.innerHTML=`<tr><td colspan="6">${emptyDiv('fa-certificate','No NOCs issued yet','Approve an application first, then issue NOC')}</td></tr>`;return}
-  tb.innerHTML=f.map(a=>{const i=apps.indexOf(a);return`<tr>
-    <td><span class="app-id">${a.nocNo}</span></td>
-    <td><div class="app-cell"><div class="app-av" style="background:${acol(i)}">${ini(a.name)}</div><div class="app-nm">${a.name}</div></div></td>
-    <td>${a.type}</td>
-    <td style="font-family:'JetBrains Mono',monospace;font-size:.8rem">${fDt(a.nocIssued)}</td>
-    <td style="font-family:'JetBrains Mono',monospace;font-size:.8rem">${fDt(a.nocValid)}</td>
-    <td><div class="tbl-acts"><button class="btn-i" onclick="viewDet('${a.id}')"><i class="fas fa-eye"></i></button><button class="btn-i" onclick="showToast('${a.nocNo} sent to printer','info')"><i class="fas fa-print"></i></button></div></td></tr>`}).join('');
-}
+                    <div class="card">
+                        <h3>Recent Status</h3>
+                        ${User.getTableHtml(apps.slice(0, 5))}
+                    </div>
+                `;
+            },
 
-// ===== STATS =====
-function updStats(){
-  const t=apps.length,ins=apps.filter(a=>a.status==='inspection').length,fu=apps.filter(a=>a.status==='followup').length,noc=apps.filter(a=>a.status==='noc-issued').length;
-  document.getElementById('sTotal').textContent=t;document.getElementById('sInsp').textContent=ins;
-  document.getElementById('sFu').textContent=fu;document.getElementById('sNoc').textContent=noc;
-  document.getElementById('navAppCt').textContent=t;document.getElementById('navInspCt').textContent=ins;
-  document.getElementById('navFuCt').textContent=fu;document.getElementById('navNocCt').textContent=noc;
-}
+            renderMyApplications: () => {
+                Dashboard.renderHeader();
+                document.getElementById('page-title').innerText = 'My Applications';
+                const apps = DataManager.getApplications().filter(a => a.userId === Auth.currentUser.id);
+                
+                document.getElementById('dynamic-content').innerHTML = `
+                    <div class="card">
+                        <h3>All Applications</h3>
+                        ${User.getTableHtml(apps)}
+                    </div>
+                `;
+            },
 
-function refresh(){updStats();renderApp();renderInsp();renderFu();renderNOC();updateCharts()}
+            getTableHtml: (apps) => {
+                if(apps.length === 0) return '<p style="text-align:center; color:#888; margin-top:20px;">No applications found.</p>';
+                
+                const rows = apps.map(app => `
+                    <tr>
+                        <td>${app.id}</td>
+                        <td>${app.buildingName}</td>
+                        <td>${Utils.formatDate(app.date)}</td>
+                        <td><span class="badge ${User.getBadgeClass(app.status)}">${app.status}</span></td>
+                    </tr>
+                `).join('');
 
-// ===== CHARTS =====
-let tChI,sChI,bChI,iChI;
-function initCharts(){
-  const tc=document.getElementById('trendCh').getContext('2d'),gr=tc.createLinearGradient(0,0,0,240);
-  gr.addColorStop(0,'rgba(245,158,11,.2)');gr.addColorStop(1,'rgba(245,158,11,0)');
-  tChI=new Chart(tc,{type:'line',data:{labels:['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'],datasets:[
-    {label:'Applications',data:[0,0,0,0,0,0,0,0,0,0,0,0],borderColor:'#f59e0b',backgroundColor:gr,fill:true,tension:.4,borderWidth:2,pointRadius:3,pointBackgroundColor:'#f59e0b',pointBorderColor:'#08080b',pointBorderWidth:2},
-    {label:'NOCs',data:[0,0,0,0,0,0,0,0,0,0,0,0],borderColor:'#22c55e',backgroundColor:'transparent',fill:false,tension:.4,borderWidth:2,pointRadius:3,pointBackgroundColor:'#22c55e',pointBorderColor:'#08080b',pointBorderWidth:2,borderDash:[4,4]}
-  ]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#9d9bab',font:{family:'Outfit',size:11},usePointStyle:true,pointStyle:'circle',padding:14}}},scales:{x:{grid:{color:'rgba(37,37,48,.6)',drawBorder:false},ticks:{color:'#5e5d6e',font:{family:'Outfit',size:10}}},y:{grid:{color:'rgba(37,37,48,.6)',drawBorder:false},ticks:{color:'#5e5d6e',font:{family:'JetBrains Mono',size:10}},beginAtZero:true}}}});
-  sChI=new Chart(document.getElementById('statusCh'),{type:'doughnut',data:{labels:['Pending','Inspection','Follow-up','Approved','NOC','Rejected'],datasets:[{data:[0,0,0,0,0,0],backgroundColor:['#f97316','#38bdf8','#a78bfa','#22c55e','#f59e0b','#ef4444'],borderColor:'#15151d',borderWidth:3,hoverOffset:5}]},options:{responsive:true,maintainAspectRatio:false,cutout:'65%',plugins:{legend:{position:'bottom',labels:{color:'#9d9bab',font:{family:'Outfit',size:10},usePointStyle:true,pointStyle:'circle',padding:10}}}}});
-}
-function updateCharts(){
-  if(!sChI)return;
-  sChI.data.datasets[0].data=[apps.filter(a=>a.status==='pending').length,apps.filter(a=>a.status==='inspection').length,apps.filter(a=>a.status==='followup').length,apps.filter(a=>a.status==='approved').length,apps.filter(a=>a.status==='noc-issued').length,apps.filter(a=>a.status==='rejected').length];
-  sChI.update();
-}
-function initRepCharts(){
-  if(bChI)return;
-  const types=['Commercial','Residential','Industrial','Hospital','Educational','Hotel','Warehouse'];
-  bChI=new Chart(document.getElementById('bldCh'),{type:'bar',data:{labels:types,datasets:[{label:'Applications',data:types.map(t=>apps.filter(a=>a.type===t).length),backgroundColor:['rgba(245,158,11,.65)','rgba(34,197,94,.65)','rgba(239,68,68,.65)','rgba(56,189,248,.65)','rgba(167,139,250,.65)','rgba(249,115,22,.65)','rgba(236,72,153,.65)'],borderRadius:5,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,indexAxis:'y',plugins:{legend:{display:false}},scales:{x:{grid:{color:'rgba(37,37,48,.6)',drawBorder:false},ticks:{color:'#5e5d6e',font:{family:'JetBrains Mono',size:10}}},y:{grid:{display:false},ticks:{color:'#9d9bab',font:{family:'Outfit',size:11}}}}}});
-  const insps=['Vikram Singh','Priya Patel','Amit Kumar','Sneha Reddy','Rahul Joshi'];
-  iChI=new Chart(document.getElementById('inspCh'),{type:'bar',data:{labels:insps,datasets:[{label:'Assigned',data:insps.map(ins=>apps.filter(a=>a.inspector===ins).length),backgroundColor:'rgba(245,158,11,.65)',borderRadius:4,borderSkipped:false}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:'#9d9bab',font:{family:'Outfit',size:11},usePointStyle:true,pointStyle:'circle',padding:14}}},scales:{x:{grid:{display:false},ticks:{color:'#9d9bab',font:{family:'Outfit',size:10}}},y:{grid:{color:'rgba(37,37,48,.6)',drawBorder:false},ticks:{color:'#5e5d6e',font:{family:'JetBrains Mono',size:10}},beginAtZero:true}}}});
-}
+                return `
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>App ID</th>
+                                    <th>Building Name</th>
+                                    <th>Submission Date</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>${rows}</tbody>
+                        </table>
+                    </div>
+                `;
+            },
 
-// ===== KEYBOARD =====
-document.addEventListener('keydown',e=>{if(e.key==='Escape')document.querySelectorAll('.m-overlay.open').forEach(m=>closeM(m.id));if((e.ctrlKey||e.metaKey)&&e.key==='k'){e.preventDefault();document.getElementById('gSearch').focus()}});
+            getBadgeClass: (status) => {
+                if(status === 'Pending') return 'badge-pending';
+                if(status === 'Under Inspection') return 'badge-inspection';
+                if(status === 'Follow-up Required') return 'badge-followup';
+                if(status === 'Approved') return 'badge-approved';
+                return 'badge-rejected';
+            },
 
-// ===== INIT =====
-document.addEventListener('DOMContentLoaded',()=>{refresh();initCharts()});
+            submitApplication: (e) => {
+                e.preventDefault();
+                const form = e.target;
+                const newApp = {
+                    id: 'APP' + Math.floor(Math.random() * 10000),
+                    userId: Auth.currentUser.id,
+                    buildingName: form.buildingName.value,
+                    propertyType: form.propertyType.value,
+                    address: form.address.value,
+                    date: new Date().toISOString(),
+                    status: 'Pending',
+                    remarks: '',
+                    followUpReason: ''
+                };
+                
+                DataManager.saveApplication(newApp);
+                Utils.showToast('Application Submitted Successfully', 'success');
+                Utils.closeModal('modal-new-app');
+                form.reset();
+                User.renderHome();
+            }
+        };
+
+        /* =========================================
+           JS: Inspection Logic
+           ========================================= */
+        const Inspector = {
+            renderHome: () => {
+                Dashboard.renderHeader();
+                document.getElementById('page-title').innerText = 'Inspection Tasks';
+                
+                const apps = DataManager.getApplications();
+                // Filter for tasks: Pending or Follow-up
+                const tasks = apps.filter(a => a.status === 'Pending' || a.status === 'Follow-up Required' || a.status === 'Under Inspection');
+
+                document.getElementById('dynamic-content').innerHTML = `
+                    <div class="card">
+                        <h3>Pending Inspections & Follow-ups</h3>
+                        ${Inspector.getTableHtml(tasks)}
+                    </div>
+                `;
+            },
+
+            renderHistory: () => {
+                Dashboard.renderHeader();
+                document.getElementById('page-title').innerText = 'Inspection History';
+                const apps = DataManager.getApplications().filter(a => a.status === 'Approved');
+                
+                document.getElementById('dynamic-content').innerHTML = `
+                    <div class="card">
+                        <h3>Closed Inspections</h3>
+                        ${Inspector.getTableHtml(apps, true)}
+                    </div>
+                `;
+            },
+
+            getTableHtml: (apps, isHistory = false) => {
+                if(apps.length === 0) return '<p style="text-align:center; color:#888; margin-top:20px;">No tasks assigned.</p>';
+                
+                const rows = apps.map(app => `
+                    <tr>
+                        <td>${app.id}</td>
+                        <td>${app.buildingName}<br><small style="color:#888">${app.address}</small></td>
+                        <td>${app.status}</td>
+                        <td>
+                            ${!isHistory ? `<button class="btn btn-primary btn-sm" onclick="Inspector.openInspectModal('${app.id}')">
+                                ${app.status === 'Follow-up Required' ? 'Verify Follow-up' : 'Inspect'}
+                            </button>` : `<span class="badge badge-approved">Completed</span>`}
+                        </td>
+                    </tr>
+                `).join('');
+
+                return `
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Property</th>
+                                    <th>Status</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>${rows}</tbody>
+                        </table>
+                    </div>
+                `;
+            },
+
+            openInspectModal: (id) => {
+                document.getElementById('inspect-appId').value = id;
+                Utils.openModal('modal-inspection');
+            },
+
+            toggleFollowUp: (select) => {
+                const group = document.getElementById('followup-reason-group');
+                if(select.value === 'Follow-up Required') {
+                    group.style.display = 'block';
+                } else {
+                    group.style.display = 'none';
+                }
+            },
+
+            submitReport: (e) => {
+                e.preventDefault();
+                const form = e.target;
+                const id = form.appId.value;
+                const apps = DataManager.getApplications();
+                const appIndex = apps.findIndex(a => a.id === id);
+
+                if(appIndex > -1) {
+                    const newStatus = form.status.value;
+                    apps[appIndex].status = newStatus === 'Follow-up Required' ? 'Follow-up Required' : 'Under Admin Review';
+                    apps[appIndex].remarks = form.remarks.value;
+                    if(newStatus === 'Follow-up Required') {
+                        apps[appIndex].followUpReason = form.followupReason.value;
+                    } else {
+                        apps[appIndex].followUpReason = '';
+                    }
+
+                    DataManager.updateApplication(apps[appIndex]);
+                    Utils.showToast('Inspection Report Submitted', 'success');
+                    Utils.closeModal('modal-inspection');
+                    Inspector.renderHome();
+                }
+            }
+        };
+
+        /* =========================================
+           JS: NOC / Admin Logic
+           ========================================= */
+        const Admin = {
+            renderHome: () => {
+                Dashboard.renderHeader();
+                document.getElementById('page-title').innerText = 'Admin Overview';
+                
+                const apps = DataManager.getApplications();
+                const pending = apps.filter(a => a.status === 'Under Admin Review').length;
+                const issued = apps.filter(a => a.status === 'Approved').length;
+                const total = apps.length;
+
+                document.getElementById('dynamic-content').innerHTML = `
+                    <div class="stats-grid">
+                        <div class="stat-card">
+                            <div class="stat-info"><h3>${total}</h3><p>Total Applications</p></div>
+                            <i class="fa-solid fa-file-contract stat-icon"></i>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-info"><h3>${pending}</h3><p>Pending Final Approval</p></div>
+                            <i class="fa-solid fa-hourglass-half stat-icon"></i>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-info"><h3>${issued}</h3><p>NOCs Issued</p></div>
+                            <i class="fa-solid fa-certificate stat-icon"></i>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <h3>System Statistics</h3>
+                        <p style="margin-top:10px;">The FireNOCTracker system is functioning normally. Real-time data synchronization active.</p>
+                    </div>
+                `;
+            },
+
+            renderAllApps: () => {
+                Dashboard.renderHeader();
+                document.getElementById('page-title').innerText = 'All Applications Database';
+                const apps = DataManager.getApplications();
+                
+                document.getElementById('dynamic-content').innerHTML = `
+                    <div class="card">
+                        <h3>Master List</h3>
+                        ${Admin.getTableHtml(apps)}
+                    </div>
+                `;
+            },
+
+            renderNocIssuance: () => {
+                Dashboard.renderHeader();
+                document.getElementById('page-title').innerText = 'NOC Issuance';
+                // Filter apps ready for NOC (Under Admin Review)
+                const apps = DataManager.getApplications().filter(a => a.status === 'Under Admin Review');
+                
+                document.getElementById('dynamic-content').innerHTML = `
+                    <div class="card">
+                        <h3>Ready for Issuance</h3>
+                        ${Admin.getTableHtml(apps, true)}
+                    </div>
+                `;
+            },
+
+            getTableHtml: (apps, actions = false) => {
+                if(apps.length === 0) return '<p style="text-align:center; color:#888; margin-top:20px;">No records found.</p>';
+                
+                const rows = apps.map(app => `
+                    <tr>
+                        <td>${app.id}</td>
+                        <td>${app.buildingName}</td>
+                        <td>${app.remarks || '-'}</td>
+                        <td><span class="badge ${User.getBadgeClass(app.status)}">${app.status}</span></td>
+                        ${actions ? `
+                        <td>
+                            <button class="btn btn-success btn-sm" style="background:${varCss('success')}; color:#fff;" onclick="Admin.issueNOC('${app.id}')">
+                                Issue NOC
+                            </button>
+                        </td>` : '<td></td>'}
+                    </tr>
+                `).join('');
+
+                return `
+                    <div class="table-container">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Property</th>
+                                    <th>Inspector Remarks</th>
+                                    <th>Status</th>
+                                    ${actions ? '<th>Action</th>' : ''}
+                                </tr>
+                            </thead>
+                            <tbody>${rows}</tbody>
+                        </table>
+                    </div>
+                `;
+            },
+
+            issueNOC: (id) => {
+                const apps = DataManager.getApplications();
+                const app = apps.find(a => a.id === id);
+                if(app) {
+                    app.status = 'Approved';
+                    DataManager.updateApplication(app);
+                    Utils.showToast(`NOC Issued for ${app.buildingName}`, 'success');
+                    Admin.renderNocIssuance();
+                }
+            }
+        };
+
+        function varCss(name) {
+            return getComputedStyle(document.documentElement).getPropertyValue('--'+name).trim();
+        }
+
+        /* =========================================
+           JS: app.js (Initialization & Routing)
+           ========================================= */
+        const App = {
+            init: () => {
+                // Check local storage
+                if(!localStorage.getItem('fireNocData')) {
+                    localStorage.setItem('fireNocData', JSON.stringify(initialData));
+                }
+                
+                // Event Listeners
+                document.getElementById('form-new-app').addEventListener('submit', User.submitApplication);
+                document.getElementById('form-inspection').addEventListener('submit', Inspector.submitReport);
+                
+                // Start at Landing Page
+                App.showLanding();
+            },
+
+            showLanding: () => {
+                document.getElementById('landing-page').style.display = 'flex';
+                document.getElementById('login-page').style.display = 'none';
+                document.getElementById('dashboard-app').style.display = 'none';
+            },
+
+            showLogin: () => {
+                document.getElementById('landing-page').style.display = 'none';
+                document.getElementById('login-page').style.display = 'flex';
+                document.getElementById('dashboard-app').style.display = 'none';
+            },
+
+            initDashboard: () => {
+                document.getElementById('login-page').style.display = 'none';
+                const dashboard = document.getElementById('dashboard-app');
+                dashboard.style.display = 'block';
+                
+                Dashboard.renderMenu();
+                
+                // Route to home based on role
+                if(Auth.currentUser.role === 'user') User.renderHome();
+                else if(Auth.currentUser.role === 'inspector') Inspector.renderHome();
+                else if(Auth.currentUser.role === 'admin') Admin.renderHome();
+            }
+        };
+
+        // Start App
+        document.addEventListener('DOMContentLoaded', App.init);
+
+    

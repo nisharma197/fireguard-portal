@@ -2,184 +2,175 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>FireNOC Tracker</title>
-<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-<link rel="stylesheet" href="css/style.css">
-
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FireNOCTracker - Fire Department Management System</title>
+    
+    <!-- Using Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Using Font Awesome for Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-  
-<!-- Welcome Page -->
-<div class="welcome-page" id="welcomePage">
-  <div class="welcome-bg">
-    <div class="welcome-orb"></div><div class="welcome-orb"></div><div class="welcome-orb"></div>
-    <canvas id="fireCanvas"></canvas>
-  </div>
-  <div class="welcome-content">
-    <div class="welcome-logo"><i class="fas fa-fire-flame-curved"></i></div>
-    <h1 class="welcome-title">FireNOC Tracker</h1>
-    <p class="welcome-sub">Track fire department applications, inspections, follow-ups, and NOC issuance — all in one place.</p>
-    <button class="welcome-btn" onclick="enterApp()"><i class="fas fa-arrow-right"></i> Get Started</button>
-    <div class="welcome-badge"><span class="live-dot"></span> Real-time Tracking System</div>
-  </div>
-</div>
 
-<!-- Sidebar Overlay -->
-<div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+    <!-- Toast Container -->
+    <div id="toast-container"></div>
 
-<!-- Sidebar -->
-<aside class="sidebar" id="sidebar">
-  <div class="sidebar-brand">
-    <div class="s-logo"><i class="fas fa-fire-flame-curved"></i></div>
-    <span class="s-name">FireNOC Tracker</span>
-  </div>
-  <nav class="sidebar-nav">
-    <div class="nav-label">Main</div>
-    <div class="nav-item active" data-p="dashboard" onclick="goPage('dashboard',this)"><i class="fas fa-grid-2"></i> Dashboard</div>
-    <div class="nav-item" data-p="applications" onclick="goPage('applications',this)"><i class="fas fa-file-lines"></i> Applications <span class="nav-badge a" id="navAppCt">0</span></div>
-    <div class="nav-item" data-p="inspections" onclick="goPage('inspections',this)"><i class="fas fa-clipboard-check"></i> Inspections <span class="nav-badge r" id="navInspCt">0</span></div>
-    <div class="nav-item" data-p="followups" onclick="goPage('followups',this)"><i class="fas fa-arrows-rotate"></i> Follow-ups <span class="nav-badge a" id="navFuCt">0</span></div>
-    <div class="nav-label">Certificates</div>
-    <div class="nav-item" data-p="noc" onclick="goPage('noc',this)"><i class="fas fa-certificate"></i> NOC Issued <span class="nav-badge g" id="navNocCt">0</span></div>
-    <div class="nav-item" data-p="reports" onclick="goPage('reports',this)"><i class="fas fa-chart-pie"></i> Reports</div>
-  </nav>
-</aside>
-
-<!-- Main -->
-<div class="main">
-  <header class="topbar">
-    <button class="hamburger" onclick="toggleSidebar()" aria-label="Menu"><i class="fas fa-bars"></i></button>
-    <div class="topbar-search"><i class="fas fa-magnifying-glass"></i><input type="text" placeholder="Search applications..." id="gSearch" oninput="doSearch()"></div>
-    <div class="topbar-right">
-      <span class="topbar-time" id="liveTime"></span>
-      <button class="topbar-btn" onclick="showToast('No new notifications','info')"><i class="fas fa-bell"></i></button>
-    </div>
-  </header>
-  <main class="page-wrap">
-    <!-- Dashboard -->
-    <section class="page on" id="pg-dashboard">
-      <div class="pg-head">
-        <div><h1 class="pg-title">Dashboard</h1><p class="pg-sub"><span class="live-dot"></span>&nbsp; Real-time overview</p></div>
-        <div class="pg-actions"><button class="btn btn-p" onclick="openM('newAppM')"><i class="fas fa-plus"></i> New Application</button></div>
-      </div>
-      <div class="stats">
-        <div class="st-card c1"><div class="st-top"><div class="st-icon i1"><i class="fas fa-file-lines"></i></div></div><div class="st-val" id="sTotal">0</div><div class="st-lbl">Total Applications</div></div>
-        <div class="st-card c2"><div class="st-top"><div class="st-icon i2"><i class="fas fa-clipboard-check"></i></div></div><div class="st-val" id="sInsp">0</div><div class="st-lbl">Under Inspection</div></div>
-        <div class="st-card c3"><div class="st-top"><div class="st-icon i3"><i class="fas fa-arrows-rotate"></i></div></div><div class="st-val" id="sFu">0</div><div class="st-lbl">Pending Follow-ups</div></div>
-        <div class="st-card c4"><div class="st-top"><div class="st-icon i4"><i class="fas fa-certificate"></i></div></div><div class="st-val" id="sNoc">0</div><div class="st-lbl">NOCs Issued</div></div>
-      </div>
-      <div class="ch-grid">
-        <div class="ch-card"><div class="ch-title"><i class="fas fa-chart-line"></i> Monthly Trend</div><div class="ch-box"><canvas id="trendCh"></canvas></div></div>
-        <div class="ch-card"><div class="ch-title"><i class="fas fa-chart-doughnut"></i> Status Breakdown</div><div class="ch-box"><canvas id="statusCh"></canvas></div></div>
-      </div>
-    </section>
-    <!-- Applications -->
-    <section class="page" id="pg-applications">
-      <div class="pg-head">
-        <div><h1 class="pg-title">Applications</h1><p class="pg-sub">Manage all fire department applications</p></div>
-        <div class="pg-actions"><button class="btn btn-p" onclick="openM('newAppM')"><i class="fas fa-plus"></i> New Application</button></div>
-      </div>
-      <div class="tbl-wrap">
-        <div class="tbl-head">
-          <div class="tbl-left"><span class="tbl-t">All Applications</span><span class="tbl-c" id="appCt">0</span></div>
-          <div class="tbl-fil">
-            <button class="fil-btn on" onclick="filt('all',this)">All</button>
-            <button class="fil-btn" onclick="filt('pending',this)">Pending</button>
-            <button class="fil-btn" onclick="filt('inspection',this)">Inspection</button>
-            <button class="fil-btn" onclick="filt('followup',this)">Follow-up</button>
-            <button class="fil-btn" onclick="filt('approved',this)">Approved</button>
-            <button class="fil-btn" onclick="filt('noc-issued',this)">NOC</button>
-            <button class="fil-btn" onclick="filt('rejected',this)">Rejected</button>
-          </div>
+    <!-- =======================
+         LANDING PAGE
+         ======================= -->
+    <section id="landing-page">
+        <div class="landing-logo">
+            <i class="fa-solid fa-fire-extinguisher"></i>
         </div>
-        <div class="tbl-scroll"><table><thead><tr><th>ID</th><th>Applicant</th><th>Type</th><th>Priority</th><th>Status</th><th>Date</th><th>Actions</th></tr></thead><tbody id="appTb"></tbody></table></div>
-        <div class="tbl-foot"><span class="tbl-info" id="tblInfo"></span><div class="pag" id="pagDiv"></div></div>
-      </div>
+        <div class="landing-content">
+            <h1>FireNOCTracker</h1>
+            <p>Real-time tracking for Inspections, Follow-ups, and NOC Issuance.</p>
+            <button class="btn btn-primary" onclick="App.showLogin()">Get Started</button>
+        </div>
     </section>
-    <!-- Inspections -->
-    <section class="page" id="pg-inspections">
-      <div class="pg-head">
-        <div><h1 class="pg-title">Inspections</h1><p class="pg-sub">Track scheduled inspections</p></div>
-        <div class="pg-actions"><button class="btn btn-p" onclick="openM('schedM')"><i class="fas fa-calendar-plus"></i> Schedule</button></div>
-      </div>
-      <div class="tbl-wrap"><div class="tbl-scroll"><table><thead><tr><th>ID</th><th>Applicant</th><th>Inspector</th><th>Date</th><th>Status</th><th>Actions</th></tr></thead><tbody id="inspTb"></tbody></table></div></div>
-    </section>
-    <!-- Follow-ups -->
-    <section class="page" id="pg-followups">
-      <div class="pg-head"><div><h1 class="pg-title">Follow-ups</h1><p class="pg-sub">Track pending compliance items</p></div></div>
-      <div class="fu-list" id="fuList"></div>
-    </section>
-    <!-- NOC -->
-    <section class="page" id="pg-noc">
-      <div class="pg-head">
-        <div><h1 class="pg-title">NOC Certificates</h1><p class="pg-sub">Issued No Objection Certificates</p></div>
-        <div class="pg-actions"><button class="btn btn-p" onclick="openM('nocM')"><i class="fas fa-stamp"></i> Issue NOC</button></div>
-      </div>
-      <div class="noc-grid" id="nocGrid"></div>
-      <div class="tbl-wrap"><div class="tbl-scroll"><table><thead><tr><th>NOC No.</th><th>Applicant</th><th>Type</th><th>Issued</th><th>Valid Till</th><th>Actions</th></tr></thead><tbody id="nocTb"></tbody></table></div></div>
-    </section>
-    <!-- Reports -->
-    <section class="page" id="pg-reports">
-      <div class="pg-head"><div><h1 class="pg-title">Reports</h1><p class="pg-sub">Analytics overview</p></div></div>
-      <div class="ch-grid">
-        <div class="ch-card"><div class="ch-title"><i class="fas fa-building"></i> By Building Type</div><div class="ch-box"><canvas id="bldCh"></canvas></div></div>
-        <div class="ch-card"><div class="ch-title"><i class="fas fa-chart-bar"></i> Inspector Workload</div><div class="ch-box"><canvas id="inspCh"></canvas></div></div>
-      </div>
-    </section>
-  </main>
-</div>
 
-<!-- Modal: New App -->
-<div class="m-overlay" id="newAppM">
-  <div class="modal">
-    <div class="m-head"><span class="m-title">New Application</span><button class="m-close" onclick="closeM('newAppM')"><i class="fas fa-xmark"></i></button></div>
-    <div class="m-body"><div class="f-grid">
-      <div class="f-grp"><label class="f-lbl">Applicant Name *</label><input class="f-inp" id="naName" placeholder="Full name"></div>
-      <div class="f-grp"><label class="f-lbl">Phone *</label><input class="f-inp" id="naPhone" placeholder="+91 XXXXX XXXXX"></div>
-      <div class="f-grp"><label class="f-lbl">Building Type *</label><select class="f-sel" id="naType"><option value="">Select...</option><option>Commercial</option><option>Residential</option><option>Industrial</option><option>Hospital</option><option>Educational</option><option>Hotel</option><option>Warehouse</option></select></div>
-      <div class="f-grp"><label class="f-lbl">Priority</label><select class="f-sel" id="naPri"><option>Medium</option><option>High</option><option>Low</option></select></div>
-      <div class="f-grp full"><label class="f-lbl">Address *</label><textarea class="f-ta" id="naAddr" placeholder="Premises address..."></textarea></div>
-    </div></div>
-    <div class="m-foot"><button class="btn btn-s" onclick="closeM('newAppM')">Cancel</button><button class="btn btn-p" onclick="submitApp()"><i class="fas fa-check"></i> Submit</button></div>
-  </div>
-</div>
-<!-- Modal: Schedule -->
-<div class="m-overlay" id="schedM">
-  <div class="modal">
-    <div class="m-head"><span class="m-title">Schedule Inspection</span><button class="m-close" onclick="closeM('schedM')"><i class="fas fa-xmark"></i></button></div>
-    <div class="m-body"><div class="f-grid">
-      <div class="f-grp"><label class="f-lbl">Application *</label><select class="f-sel" id="scApp"><option value="">Select...</option></select></div>
-      <div class="f-grp"><label class="f-lbl">Inspector *</label><select class="f-sel" id="scInsp"><option>Vikram Singh</option><option>Priya Patel</option><option>Amit Kumar</option><option>Sneha Reddy</option><option>Rahul Joshi</option></select></div>
-      <div class="f-grp"><label class="f-lbl">Date *</label><input class="f-inp" type="date" id="scDate"></div>
-      <div class="f-grp"><label class="f-lbl">Time</label><select class="f-sel" id="scTime"><option>09:00 AM</option><option>11:00 AM</option><option>02:00 PM</option><option>04:00 PM</option></select></div>
-    </div></div>
-    <div class="m-foot"><button class="btn btn-s" onclick="closeM('schedM')">Cancel</button><button class="btn btn-p" onclick="submitSched()"><i class="fas fa-calendar-check"></i> Schedule</button></div>
-  </div>
-</div>
-<!-- Modal: Issue NOC -->
-<div class="m-overlay" id="nocM">
-  <div class="modal">
-    <div class="m-head"><span class="m-title">Issue NOC</span><button class="m-close" onclick="closeM('nocM')"><i class="fas fa-xmark"></i></button></div>
-    <div class="m-body"><div class="f-grid">
-      <div class="f-grp"><label class="f-lbl">Application *</label><select class="f-sel" id="nocApp"><option value="">Select approved...</option></select></div>
-      <div class="f-grp"><label class="f-lbl">Validity</label><select class="f-sel" id="nocVal"><option>1 Year</option><option>2 Years</option><option>3 Years</option></select></div>
-    </div></div>
-    <div class="m-foot"><button class="btn btn-s" onclick="closeM('nocM')">Cancel</button><button class="btn btn-sc" onclick="issueNOC()"><i class="fas fa-stamp"></i> Issue NOC</button></div>
-  </div>
-</div>
-<!-- Modal: Detail -->
-<div class="m-overlay" id="detM">
-  <div class="modal" style="max-width:680px">
-    <div class="m-head"><span class="m-title" id="detTitle">Details</span><button class="m-close" onclick="closeM('detM')"><i class="fas fa-xmark"></i></button></div>
-    <div class="m-body" id="detBody"></div>
-    <div class="m-foot" id="detFoot"></div>
-  </div>
-</div>
+    <!-- =======================
+         LOGIN / ROLE SELECTION
+         ======================= -->
+    <section id="login-page">
+        <div style="text-align: center; margin-bottom: 40px;">
+            <h2 style="color: var(--secondary-color);">Select Your Role</h2>
+            <p style="color: #666;">Login to access the Fire Department Portal</p>
+        </div>
+        
+        <div class="login-container">
+            <!-- User Role -->
+            <div class="role-card" onclick="Auth.login('user')">
+                <i class="fa-solid fa-user role-icon"></i>
+                <h3 class="role-title">Citizen / User</h3>
+                <p class="role-desc">Apply for Fire NOC, track application status, and view compliance reports.</p>
+                <button class="btn btn-outline btn-sm">Login as User</button>
+            </div>
 
-<div class="toast-c" id="toastC"></div>
- <script src="js/script.js"></script>
+            <!-- Inspector Role -->
+            <div class="role-card" onclick="Auth.login('inspector')">
+                <i class="fa-solid fa-clipboard-check role-icon"></i>
+                <h3 class="role-title">Fire Inspector</h3>
+                <p class="role-desc">Conduct inspections, submit reports, and schedule follow-ups.</p>
+                <button class="btn btn-outline btn-sm">Login as Inspector</button>
+            </div>
+
+            <!-- Admin Role -->
+            <div class="role-card" onclick="Auth.login('admin')">
+                <i class="fa-solid fa-user-shield role-icon"></i>
+                <h3 class="role-title">Admin Officer</h3>
+                <p class="role-desc">Final approval, NOC issuance, and overall system management.</p>
+                <button class="btn btn-outline btn-sm">Login as Admin</button>
+            </div>
+        </div>
+        <div style="margin-top: 30px;">
+            <button class="btn btn-secondary btn-sm" onclick="App.showLanding()"><i class="fa-solid fa-arrow-left"></i> Back to Home</button>
+        </div>
+    </section>
+
+    <!-- =======================
+         MAIN DASHBOARD
+         ======================= -->
+    <section id="dashboard-app">
+        <!-- Sidebar -->
+        <nav class="sidebar">
+            <div class="sidebar-header">
+                <i class="fa-solid fa-fire-extinguisher" style="font-size: 1.2rem; color: var(--primary-color);"></i>
+                <span class="sidebar-logo"> FireNOCTracker</span>
+            </div>
+            <div class="sidebar-nav">
+                <ul id="sidebar-menu">
+                    <!-- Menu items injected via JS based on role -->
+                </ul>
+            </div>
+            <div style="padding: 20px; margin-top: auto;">
+                <button class="btn btn-outline btn-sm" style="width: 100%; border-color: rgba(255,255,255,0.3); color: #fff;" onclick="Auth.logout()">
+                    <i class="fa-solid fa-sign-out-alt"></i> Logout
+                </button>
+            </div>
+        </nav>
+
+        <!-- Main Content Area -->
+        <div class="main-content">
+            <!-- Top Bar -->
+            <header class="top-bar">
+                <h2 id="page-title">Dashboard</h2>
+                <div class="user-info">
+                    <span id="user-name-display">John Doe</span>
+                    <div class="user-avatar" id="user-avatar-display">JD</div>
+                </div>
+            </header>
+
+            <!-- Dynamic Content Container -->
+            <div id="dynamic-content">
+                <!-- Content injected via JS -->
+            </div>
+        </div>
+    </section>
+
+    <!-- =======================
+         MODALS
+         ======================= -->
+    
+    <!-- Modal: New Application (User) -->
+    <div class="modal" id="modal-new-app">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Apply for Fire NOC</h3>
+                <button class="close-modal" onclick="Utils.closeModal('modal-new-app')">&times;</button>
+            </div>
+            <form id="form-new-app">
+                <div class="form-group">
+                    <label>Building/Property Name</label>
+                    <input type="text" class="form-control" name="buildingName" required placeholder="e.g. Skyline Apartment">
+                </div>
+                <div class="form-group">
+                    <label>Property Type</label>
+                    <select class="form-control" name="propertyType" required>
+                        <option value="Residential">Residential</option>
+                        <option value="Commercial">Commercial</option>
+                        <option value="Industrial">Industrial</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Address</label>
+                    <textarea class="form-control" name="address" required placeholder="Full address..."></textarea>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%;">Submit Application</button>
+            </form>
+        </div>
+    </div>
+
+    <!-- Modal: Inspection Report (Inspector) -->
+    <div class="modal" id="modal-inspection">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Submit Inspection Report</h3>
+                <button class="close-modal" onclick="Utils.closeModal('modal-inspection')">&times;</button>
+            </div>
+            <form id="form-inspection">
+                <input type="hidden" name="appId" id="inspect-appId">
+                <div class="form-group">
+                    <label>Observation / Remarks</label>
+                    <textarea class="form-control" name="remarks" required placeholder="Details of the inspection..."></textarea>
+                </div>
+                <div class="form-group">
+                    <label>Result</label>
+                    <select class="form-control" name="status" id="inspect-status" onchange="Inspector.toggleFollowUp(this)" required>
+                        <option value="Approved">Passed (Ready for NOC)</option>
+                        <option value="Follow-up Required">Failed (Compliance Needed)</option>
+                    </select>
+                </div>
+                <div class="form-group" id="followup-reason-group" style="display:none;">
+                    <label>Reason for Follow-up / Requirements</label>
+                    <input type="text" class="form-control" name="followupReason" placeholder="e.g. Install extinguishers at Exit B">
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%;">Submit Report</button>
+            </form>
+        </div>
+    </div>
+    
 </body>
+<script src="js/script.js"></script>
 </html>

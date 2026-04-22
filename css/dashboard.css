@@ -1,0 +1,75 @@
+body {
+    margin: 0;
+    font-family: 'Segoe UI', sans-serif;
+    background: radial-gradient(circle at top, #1a1f35, #0b0f1a);
+    color: white;
+}
+
+/* Sidebar */
+.sidebar {
+    width: 230px;
+    height: 100vh;
+    background: rgba(255,255,255,0.04);
+    backdrop-filter: blur(10px);
+    padding: 20px;
+    border-right: 1px solid rgba(255,255,255,0.1);
+}
+
+.sidebar h2 {
+    color: #ff7a00;
+}
+
+.sidebar li {
+    padding: 12px;
+    margin: 5px 0;
+    border-radius: 8px;
+    transition: 0.3s;
+}
+
+.sidebar li:hover {
+    background: rgba(255,122,0,0.2);
+}
+
+/* Topbar */
+.topbar {
+    padding: 15px 25px;
+    background: rgba(255,255,255,0.03);
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+
+/* Cards */
+.card {
+    background: rgba(255,255,255,0.05);
+    margin: 20px;
+    padding: 25px;
+    border-radius: 15px;
+    backdrop-filter: blur(10px);
+    box-shadow: 0 0 20px rgba(255,122,0,0.1);
+}
+
+/* Buttons */
+button {
+    background: linear-gradient(45deg, #ff7a00, #ffae42);
+    border: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    color: white;
+    cursor: pointer;
+    transition: 0.3s;
+}
+
+button:hover {
+    transform: scale(1.05);
+    box-shadow: 0 0 10px #ff7a00;
+}
+
+/* Empty State */
+.empty {
+    text-align: center;
+    padding: 40px;
+    opacity: 0.7;
+}
+
+.empty h3 {
+    color: #ff7a00;
+}
